@@ -6,12 +6,15 @@ from typing import Dict, Union
 json_fn = "database"
 
 
-def read_databae(database_id, headers, save=True) -> Union[Dict, None]:
+def read_databae(database_id, headers, start_cursor: str=None, save=True) -> Union[Dict, None]:
     url = f"https://api.notion.com/v1/databases/{database_id}/query"
-    payload = {"page_size": 1000}
+    if start_cursor is not None:
+        payload = {"start_cursor": start_cursor}
+    else:
+        payload = {"page_size": 100}
+
     res = requests.request("POST", url, json=payload, headers=headers)
     data = res.json()
-    print(len(data['results']))
 
     if save:
         with open(f'./{json_fn}.json', 'w', encoding='utf8') as f:
@@ -22,32 +25,37 @@ def read_databae(database_id, headers, save=True) -> Union[Dict, None]:
 
 def update_database(database_id, headers):
     
-    db_data = read_databae(database_id, headers, save=False)
-    pages = db_data['results']
+    has_more = True
+    start_cursor = None
 
-    with tqdm(total=len(pages), desc='Updating') as pbar:
-        for page in pages:
-            page_url = f"https://api.notion.com/v1/pages/{page['id']}"
-            payload = {
-                "icon": {
-                    "type": "external",
-                    "external": {
-                        "url": "https://raw.githubusercontent.com/eirikmadland/notion-icons/master/v5/icon3/ul-label-alt.svg"
+    while has_more:
+        db_data = read_databae(database_id, headers, start_cursor=start_cursor, save=False)
+        with tqdm(total=len(db_data['results']), desc='Updating') as pbar:
+            for page in db_data['results']:
+                page_url = f"https://api.notion.com/v1/pages/{page['id']}"
+                payload = {
+                    "icon": {
+                        "type": "external",
+                        "external": {
+                            "url": "https://raw.githubusercontent.com/eirikmadland/notion-icons/master/v5/icon3/mt-format_color_text.svg"
+                        }
                     }
                 }
-            }
-            response = requests.request("PATCH", page_url, json=payload, headers=headers)
-            if response.status_code != 200:
-                print(f"Error updating page {page['id']}")
-            
-            pbar.update(1)
+                response = requests.request("PATCH", page_url, json=payload, headers=headers)
+                if response.status_code != 200:
+                    print(f"Error updating page {page['id']}")
+                
+                pbar.update(1)
+
+        has_more = db_data['has_more']
+        start_cursor = db_data['next_cursor']
 
 
 if __name__ == "__main__":
     with open('token.txt', encoding='utf8') as f:
         api_token = f.readline()
     
-    database_id = "213bac35fee64ef3b67a1c4e40ab7a4b"
+    database_id = "e002c4b2c44946329bb887a73ace5955"
 
     headers = {
         "Accept": "application/json",
