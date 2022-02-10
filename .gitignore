@@ -1,3 +1,4 @@
-token.txt
+.ipynb_checkpoints/
 *.ipynb
 *.json
+token.txt

@@ -6,7 +6,7 @@ from typing import Dict, Union
 json_fn = "database"
 
 
-def read_databae(database_id, headers, start_cursor: str=None, save=True) -> Union[Dict, None]:
+def read_database(database_id, headers, start_cursor: str=None) -> Union[Dict, None]:
     url = f"https://api.notion.com/v1/databases/{database_id}/query"
     if start_cursor is not None:
         payload = {"start_cursor": start_cursor}
@@ -14,22 +14,25 @@ def read_databae(database_id, headers, start_cursor: str=None, save=True) -> Uni
         payload = {"page_size": 100}
 
     res = requests.request("POST", url, json=payload, headers=headers)
-    data = res.json()
+    if res.status_code != 200:
+        res = res.json()
+        if "path failed validation" in res["message"]:
+            print("Invalid database id")
 
-    if save:
-        with open(f'./{json_fn}.json', 'w', encoding='utf8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+        return False
     else:
-        return data
+        return res.json()
 
 
-def update_database(database_id, headers):
+def update_database(database_id: str, headers: dict, image_url: str):
     
     has_more = True
     start_cursor = None
 
     while has_more:
-        db_data = read_databae(database_id, headers, start_cursor=start_cursor, save=False)
+        db_data = read_database(database_id, headers, start_cursor=start_cursor)
+        if db_data is False: break
+
         with tqdm(total=len(db_data['results']), desc='Updating') as pbar:
             for page in db_data['results']:
                 page_url = f"https://api.notion.com/v1/pages/{page['id']}"
@@ -37,7 +40,7 @@ def update_database(database_id, headers):
                     "icon": {
                         "type": "external",
                         "external": {
-                            "url": "https://raw.githubusercontent.com/eirikmadland/notion-icons/master/v5/icon3/mt-format_color_text.svg"
+                            "url": image_url
                         }
                     }
                 }
@@ -54,8 +57,9 @@ def update_database(database_id, headers):
 if __name__ == "__main__":
     with open('token.txt', encoding='utf8') as f:
         api_token = f.readline()
-    
-    database_id = "e002c4b2c44946329bb887a73ace5955"
+
+    database_id = input("Enter database id: ")
+    image_url = input("Enter image url: ")
 
     headers = {
         "Accept": "application/json",
@@ -64,4 +68,4 @@ if __name__ == "__main__":
         "Authorization": f"Bearer {api_token}"
     }
 
-    update_database(database_id, headers)
+    update_database(database_id, headers, image_url)
