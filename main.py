@@ -16,9 +16,7 @@ def read_database(database_id, headers, start_cursor: str=None) -> Union[Dict, N
     res = requests.request("POST", url, json=payload, headers=headers)
     if res.status_code != 200:
         res = res.json()
-        if "path failed validation" in res["message"]:
-            print("Invalid database id")
-
+        print(res.get('message', 'Unknown error'))
         return False
     else:
         return res.json()
