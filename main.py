@@ -23,7 +23,6 @@ def read_database(database_id, headers, start_cursor: str=None) -> Union[Dict, N
 
 
 def update_database(database_id: str, headers: dict, image_url: str):
-    
     has_more = True
     start_cursor = None
 
@@ -56,9 +55,6 @@ if __name__ == "__main__":
     with open('token.txt', encoding='utf8') as f:
         api_token = f.readline()
 
-    database_id = input("Enter database id: ")
-    image_url = input("Enter image url: ")
-
     headers = {
         "Accept": "application/json",
         "Notion-Version": "2021-08-16",
@@ -66,4 +62,8 @@ if __name__ == "__main__":
         "Authorization": f"Bearer {api_token}"
     }
 
-    update_database(database_id, headers, image_url)
+    while True:
+        database_id = input("Enter database id: ")
+        image_url = input("Enter image url: ")
+        update_database(database_id, headers, image_url)
+        print("\n\n")
