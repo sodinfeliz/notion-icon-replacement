@@ -1,9 +1,7 @@
-import requests, json
+import requests
+from pathlib import Path
 from tqdm import tqdm
 from typing import Dict, Union
-
-
-json_fn = "database"
 
 
 def read_database(database_id, headers, start_cursor: str=None) -> Union[Dict, None]:
@@ -52,8 +50,12 @@ def update_database(database_id: str, headers: dict, image_url: str):
 
 
 if __name__ == "__main__":
-    with open('token.txt', encoding='utf8') as f:
-        api_token = f.readline()
+    # Read the database id from the file or input
+    if Path('token.txt').exists():
+        with open('token.txt', encoding='utf8') as f:
+            api_token = f.readline()
+    else:
+        api_token = input("Enter your API token: ")
 
     headers = {
         "Accept": "application/json",
@@ -61,7 +63,7 @@ if __name__ == "__main__":
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_token}"
     }
-
+    
     while True:
         database_id = input("Enter database id: ")
         image_url = input("Enter image url: ")
